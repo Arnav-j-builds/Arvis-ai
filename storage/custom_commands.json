@@ -1,0 +1,12 @@
+{
+  "joke": {
+    "name": "joke",
+    "trigger": [
+      "tell me a joke"
+    ],
+    "response": "Why did the chicken cross the road? To get to the other side.",
+    "run_tool": null,
+    "description": "",
+    "created_at": 1786293411.7116141
+  }
+}

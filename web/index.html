@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Arvis — Voice Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600&display=swap"
+        rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/style.css" />
+</head>
+<body data-wake="off" data-speaking="off">
+    <canvas id="bg-particles"></canvas>
+    <div class="scanlines"></div>
+
+    <header class="topbar">
+        <div class="brand">
+            <span class="brand-dot"></span>
+            <span class="brand-name">ARVIS</span>
+            <span class="brand-sub">// voice&nbsp;assistant</span>
+        </div>
+        <div class="topbar-meta">
+            <span id="status-pill" class="pill pill-cyan" data-state="idle">● IDLE</span>
+            <span id="trigger-pill" class="pill">WAKE: arvis</span>
+            <span id="ollama-pill" class="pill pill-cyan">OLLAMA ?</span>
+            <span id="google-pill" class="pill">GMAIL ?</span>
+        </div>
+    </header>
+
+    <main class="layout">
+        <!-- ============================================================= -->
+        <!-- LEFT PANE                                                       -->
+        <!-- ============================================================= -->
+        <aside class="pane pane-left">
+            <section class="card glass" id="card-system">
+                <header class="card-head">
+                    <span class="card-title">SYSTEM&nbsp;MONITOR</span>
+                    <span class="card-tag">telemetry</span>
+                </header>
+                <div class="card-body">
+                    <div class="meter">
+                        <span class="meter-label">CPU</span>
+                        <div class="meter-track"><div class="meter-fill" id="meter-cpu" style="width:0%"></div></div>
+                        <span class="meter-value" id="meter-cpu-val">0%</span>
+                    </div>
+                    <div class="meter">
+                        <span class="meter-label">MEM</span>
+                        <div class="meter-track"><div class="meter-fill" id="meter-mem" style="width:0%"></div></div>
+                        <span class="meter-value" id="meter-mem-val">0%</span>
+                    </div>
+                    <div class="meter">
+                        <span class="meter-label">BAT</span>
+                        <div class="meter-track"><div class="meter-fill" id="meter-bat" style="width:0%"></div></div>
+                        <span class="meter-value" id="meter-bat-val">—</span>
+                    </div>
+                    <div class="kv">
+                        <span class="kv-k">UPTIME</span><span class="kv-v" id="kv-uptime">0s</span>
+                    </div>
+                    <div class="kv">
+                        <span class="kv-k">TOOLS</span><span class="kv-v" id="kv-tools">—</span>
+                    </div>
+                    <div class="kv">
+                        <span class="kv-k">MODE</span><span class="kv-v" id="kv-mode">DEFAULT</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card glass" id="card-modes">
+                <header class="card-head">
+                    <span class="card-title">MODES</span>
+                    <span class="card-tag">switch</span>
+                </header>
+                <div class="card-body">
+                    <div id="modes-list" class="chips"></div>
+                </div>
+            </section>
+
+            <section class="card glass" id="card-routines">
+                <header class="card-head">
+                    <span class="card-title">QUICK&nbsp;ROUTINES</span>
+                    <span class="card-tag">built-in</span>
+                </header>
+                <div class="card-body">
+                    <div id="routines-list" class="chips"></div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- ============================================================= -->
+        <!-- CENTER PANE                                                     -->
+        <!-- ============================================================= -->
+        <section class="pane pane-center">
+            <div class="glass orb-frame">
+                <div class="orb-frame-inner">
+                    <div class="wake-ring"></div>
+                    <div class="speak-ring"></div>
+                    <canvas id="orb-canvas" width="800" height="480"></canvas>
+                    <div class="orb-ring orb-ring-1"></div>
+                    <div class="orb-ring orb-ring-2"></div>
+                    <div class="orb-ring orb-ring-3"></div>
+                </div>
+                <div class="orb-meta">
+                    <div class="orb-meta-row">
+                        <span class="orb-meta-k">CORE</span>
+                        <span class="orb-meta-v" id="core-state">STANDBY</span>
+                    </div>
+                    <div class="orb-meta-row">
+                        <span class="orb-meta-k">LISTENING</span>
+                        <span class="orb-meta-v" id="core-listening">NO</span>
+                    </div>
+                    <div class="orb-meta-row">
+                        <span class="orb-meta-k">LAST&nbsp;TOOL</span>
+                        <span class="orb-meta-v" id="core-tool">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass dialogue" id="dialogue">
+                <header class="card-head">
+                    <span class="card-title">DIALOGUE</span>
+                    <button id="clear-btn" class="ghost-btn" title="Clear chat">CLEAR</button>
+                </header>
+                <div class="card-body chat-scroll" id="chat-scroll"></div>
+            </div>
+
+            <form id="composer" class="glass composer" autocomplete="off">
+                <button type="button" id="mic-btn" class="mic-btn wake" title="Always-on: listening for wake word">
+                    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                        <path d="M12 1.7a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0v-6a3 3 0 0 0-3-3z" fill="currentColor"/>
+                        <path d="M5 11a1 1 0 1 1 2 0 5 5 0 0 0 10 0 1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-3.07A7 7 0 0 1 5 11z" fill="currentColor"/>
+                    </svg>
+                </button>
+                <input
+                    id="composer-input"
+                    type="text"
+                    placeholder="Type a command — or just say 'arvis'…"
+                    spellcheck="false"
+                />
+                <button type="submit" id="send-btn" class="send-btn" title="Send">
+                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                        <path d="M2 12 22 3l-4 18-5-7-7-2z" fill="currentColor"/>
+                    </svg>
+                </button>
+                <button type="button" id="mute-btn" class="mic-btn" title="Toggle speech" data-on="1">
+                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                        <path id="mute-icon-path" d="M3 10v4h4l5 5V5L7 10H3zm13.5 2a4.5 4.5 0 0 0-2.5-4.03v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z" fill="currentColor"/>
+                    </svg>
+                </button>
+            </form>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- RIGHT PANE - tabbed (Tools / Custom / Log)                       -->
+        <!-- ============================================================= -->
+        <aside class="pane pane-right">
+            <div class="tabs" id="tabs">
+                <button class="tab active" data-tab="tools">TOOLS</button>
+                <button class="tab" data-tab="custom">CUSTOM</button>
+                <button class="tab" data-tab="log">LOG</button>
+            </div>
+
+            <div class="tab-pane active" data-tab="tools">
+                <section class="card glass" id="card-recent">
+                    <header class="card-head">
+                        <span class="card-title">RECENT&nbsp;COMMANDS</span>
+                        <span class="card-tag" id="recent-count">0</span>
+                    </header>
+                    <div class="card-body">
+                        <ul id="recent-list" class="recent-list"></ul>
+                    </div>
+                </section>
+
+                <section class="card glass" id="card-tools">
+                    <header class="card-head">
+                        <span class="card-title">REGISTERED&nbsp;TOOLS</span>
+                        <span class="card-tag" id="tools-count">0</span>
+                    </header>
+                    <div class="card-body">
+                        <ul id="tools-list" class="recent-list"></ul>
+                    </div>
+                </section>
+
+                <section class="card glass" id="card-actions">
+                    <header class="card-head">
+                        <span class="card-title">QUICK&nbsp;ACTIONS</span>
+                        <span class="card-tag">direct</span>
+                    </header>
+                    <div class="card-body chips" id="quick-actions">
+                        <button class="chip" data-action="cmd" data-cmd="run git status">GIT STATUS</button>
+                        <button class="chip" data-action="cmd" data-cmd="run ipconfig">IP INFO</button>
+                        <button class="chip" data-action="cmd" data-cmd="run whoami">WHO AM I</button>
+                        <button class="chip" data-action="cmd" data-cmd="run systeminfo">SYSINFO</button>
+                        <button class="chip" data-action="cmd" data-cmd="lock">LOCK PC</button>
+                        <button class="chip" data-action="cmd" data-cmd="volume up">VOL +</button>
+                        <button class="chip" data-action="cmd" data-cmd="volume down">VOL −</button>
+                        <button class="chip" data-action="cmd" data-cmd="mute">MUTE</button>
+                    </div>
+                </section>
+            </div>
+
+            <div class="tab-pane" data-tab="custom">
+                <section class="card glass" id="card-reminders">
+                    <header class="card-head">
+                        <span class="card-title">REMINDERS</span>
+                        <span class="card-tag" id="reminders-count">0</span>
+                    </header>
+                    <div class="card-body">
+                        <ul id="reminders-list" class="cmd-list"></ul>
+                        <div class="form-row" style="margin-top:10px">
+                            <label>NEW REMINDER</label>
+                            <input id="reminder-text" placeholder="take a break" />
+                        </div>
+                        <div class="form-row">
+                            <label>WHEN</label>
+                            <select id="reminder-when">
+                                <option value="60">in 1 minute</option>
+                                <option value="300" selected>in 5 minutes</option>
+                                <option value="900">in 15 minutes</option>
+                                <option value="1800">in 30 minutes</option>
+                                <option value="3600">in 1 hour</option>
+                            </select>
+                        </div>
+                        <button class="primary-btn" id="reminder-add">+ ADD REMINDER</button>
+                    </div>
+                </section>
+
+                <section class="card glass" id="card-ccmds">
+                    <header class="card-head">
+                        <span class="card-title">CUSTOM&nbsp;COMMANDS</span>
+                        <span class="card-tag" id="ccmds-count">0</span>
+                    </header>
+                    <div class="card-body">
+                        <ul id="ccmds-list" class="cmd-list"></ul>
+                        <div class="form-row" style="margin-top:10px">
+                            <label>NAME</label>
+                            <input id="ccmd-name" placeholder="joke" />
+                        </div>
+                        <div class="form-row">
+                            <label>TRIGGER (what you say)</label>
+                            <input id="ccmd-trigger" placeholder="tell me a joke" />
+                        </div>
+                        <div class="form-row">
+                            <label>RESPONSE</label>
+                            <textarea id="ccmd-response" placeholder="Because the road needed company."></textarea>
+                        </div>
+                        <button class="primary-btn" id="ccmd-add">+ ADD COMMAND</button>
+                    </div>
+                </section>
+
+                <section class="card glass" id="card-modes-builder">
+                    <header class="card-head">
+                        <span class="card-title">CUSTOM&nbsp;MODES</span>
+                        <span class="card-tag" id="modes-count">0</span>
+                    </header>
+                    <div class="card-body">
+                        <ul id="modes-builder-list" class="cmd-list"></ul>
+                        <div class="form-row" style="margin-top:10px">
+                            <label>NAME</label>
+                            <input id="mode-name" placeholder="focus" />
+                        </div>
+                        <div class="form-row">
+                            <label>COLOUR (#hex)</label>
+                            <input id="mode-colour" placeholder="#7fff7f" value="#5fe4ff" />
+                        </div>
+                        <div class="form-row">
+                            <label>PROMPT FLAVOUR</label>
+                            <textarea id="mode-prompt" placeholder="Be concise and technical."></textarea>
+                        </div>
+                        <button class="primary-btn" id="mode-add">+ ADD MODE</button>
+                    </div>
+                </section>
+
+                <section class="card glass" id="card-google">
+                    <header class="card-head">
+                        <span class="card-title">GMAIL&nbsp;OAUTH</span>
+                        <span class="card-tag" id="google-status-tag">…</span>
+                    </header>
+                    <div class="card-body">
+                        <div class="kv"><span class="kv-k">CONFIGURED</span><span class="kv-v" id="google-configured">—</span></div>
+                        <div class="kv"><span class="kv-k">SIGNED IN</span><span class="kv-v" id="google-signed">—</span></div>
+                        <div class="kv"><span class="kv-k">EMAIL</span><span class="kv-v" id="google-email">—</span></div>
+                        <div style="display:flex; gap:8px; margin-top:10px;">
+                            <button class="primary-btn" id="google-signin">SIGN IN</button>
+                            <button class="ghost-btn" id="google-signout">SIGN OUT</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="tab-pane" data-tab="log">
+                <section class="card glass" id="card-eventlog">
+                    <header class="card-head">
+                        <span class="card-title">EVENT&nbsp;LOG</span>
+                        <span class="card-tag">live</span>
+                    </header>
+                    <div class="card-body">
+                        <ul id="event-log" class="event-log"></ul>
+                    </div>
+                </section>
+            </div>
+        </aside>
+    </main>
+
+    <footer class="footer">
+        <span>ARVIS // WEB UI v2.0</span>
+        <span id="footer-status">Ready.</span>
+        <span>// 3D ORB · WAKE-WORD · OAUTH · TASKS</span>
+    </footer>
+
+    <!-- Three.js (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js"></script>
+    <!-- Socket.IO client (CDN) -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="/orb.js"></script>
+    <script src="/app.js"></script>
+</body>
+</html>

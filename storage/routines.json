@@ -1,0 +1,35 @@
+{
+  "starting work": {
+    "description": "Boot the tools I use every morning.",
+    "trigger": ["starting work", "start work", "i'm starting work", "im starting work"],
+    "actions": [
+      { "action": "open_app", "value": "vscode" },
+      { "action": "open_app", "value": "chrome" },
+      { "action": "open_url", "value": "https://github.com" },
+      { "action": "open_url", "value": "https://www.notion.so" },
+      { "action": "open_app", "value": "spotify" },
+      { "action": "wait", "value": "3" },
+      { "action": "say", "value": "Everything is ready, sir." }
+    ]
+  },
+  "studying": {
+    "description": "Open the study setup.",
+    "trigger": ["i'm studying", "im studying", "study mode", "start studying"],
+    "actions": [
+      { "action": "open_app", "value": "chrome" },
+      { "action": "open_url", "value": "https://chatgpt.com" },
+      { "action": "open_app", "value": "explorer" },
+      { "action": "say", "value": "Focus timer starting now." },
+      { "action": "wait", "value": "2" },
+      { "action": "say", "value": "Mute notifications for the next 50 minutes." }
+    ]
+  },
+  "movie time": {
+    "description": "Kick off movie mode.",
+    "trigger": ["movie time", "start movie mode"],
+    "actions": [
+      { "action": "open_url", "value": "https://www.netflix.com" },
+      { "action": "say", "value": "Lights, camera, popcorn." }
+    ]
+  }
+}
